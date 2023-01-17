@@ -1,4 +1,5 @@
 # moteus brushless servo #
+Custom firmware to allow sinusoidal modulation for thrust vectored UAV
 
 This contains full designs for the moteus brushless servo actuator,
 including firmware and PCBs.
