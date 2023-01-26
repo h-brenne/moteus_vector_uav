@@ -107,6 +107,9 @@ enum BldcServoMode {
   // All phases are pulled to ground.
   kBrake = 15,
 
+  // Sinusoidal command mode
+  kSinusoidal = 16,
+
   kNumModes,
 };
 
@@ -326,6 +329,10 @@ struct BldcServoCommandData {
   // For kMeasureInductance
   int8_t meas_ind_period = 4;
 
+  // For kSinusoidal
+  float sinusoidal_amplitude = 0.0f;
+  
+
   template <typename Archive>
   void Serialize(Archive* a) {
     a->Visit(MJ_NVP(mode));
@@ -360,6 +367,7 @@ struct BldcServoCommandData {
     a->Visit(MJ_NVP(bounds_min));
     a->Visit(MJ_NVP(bounds_max));
     a->Visit(MJ_NVP(meas_ind_period));
+    a->Visit(MJ_NVP(sinusoidal_amplitude));
   }
 };
 
@@ -627,6 +635,7 @@ struct IsEnum<moteus::BldcServoMode> {
         { M::kStayWithinBounds, "within" },
         { M::kMeasureInductance, "meas_ind" },
         { M::kBrake, "brake" },
+        { M::kSinusoidal, "sinusoidal" },
       }};
   }
 };
