@@ -802,6 +802,7 @@ class BldcServo::Impl {
       status_.position = 0.0f;
       status_.velocity = 0.0f;
       status_.torque_Nm = 0.0f;
+      status_.torque_error_Nm = 0.0f;
     }
 
 #ifdef MOTEUS_PERFORMANCE_MEASURE
@@ -1031,6 +1032,9 @@ class BldcServo::Impl {
     status_.torque_Nm = torque_on() ? (
         current_to_torque(status_.q_A) /
         motor_position_->config()->rotor_to_output_ratio) : 0.0f;
+    if (!torque_on()) {
+      status_.torque_error_Nm = 0.0f;
+    }
 #ifdef MOTEUS_EMIT_CURRENT_TO_DAC
     DAC1->DHR12R1 = static_cast<uint32_t>(dq.d * 400.0f + 2048.0f);
 #endif
@@ -1294,7 +1298,8 @@ class BldcServo::Impl {
 
     if (!position_pid_active || force_clear == kAlwaysClear) {
       status_.pid_position.Clear();
-      status_.control_position = {};
+      status_.control_position_raw = {};
+      status_.control_position = std::numeric_limits<float>::quiet_NaN();
       status_.control_velocity = {};
     }
   }
@@ -1824,7 +1829,7 @@ class BldcServo::Impl {
       status_.position =
           static_cast<float>(
               static_cast<int32_t>(
-                  *status_.control_position >> 32)) /
+                  *status_.control_position_raw >> 32)) /
           65536.0f;
       status_.velocity = velocity_command;
 
@@ -1834,7 +1839,7 @@ class BldcServo::Impl {
       // with a fixed voltage drive based on the desired position.
       const float synthetic_electrical_theta =
           WrapZeroToTwoPi(
-              MotorPosition::IntToFloat(*status_.control_position)
+              MotorPosition::IntToFloat(*status_.control_position_raw)
               / motor_position_->config()->rotor_to_output_ratio
               * motor_.poles
               * 0.5f
@@ -1877,7 +1882,7 @@ class BldcServo::Impl {
         (pid_position_.Apply(
             (static_cast<int32_t>(
                 (position_.position_relative_raw -
-                 *status_.control_position) >> 32) /
+                 *status_.control_position_raw) >> 32) /
              65536.0f),
             0.0,
             measured_velocity, velocity_command,
@@ -1889,6 +1894,7 @@ class BldcServo::Impl {
         Limit(unlimited_torque_Nm, -max_torque_Nm, max_torque_Nm);
 
     control_.torque_Nm = limited_torque_Nm;
+    status_.torque_error_Nm = status_.torque_Nm - control_.torque_Nm;
 
     const float limited_q_A =
         torque_to_current(limited_torque_Nm *
@@ -1969,7 +1975,8 @@ class BldcServo::Impl {
 
     if (!target_position) {
       status_.pid_position.Clear();
-      status_.control_position = {};
+      status_.control_position_raw = {};
+      status_.control_position = std::numeric_limits<float>::quiet_NaN();
       status_.control_velocity = {};
 
       // In this region, we still apply feedforward torques if they
@@ -1977,6 +1984,7 @@ class BldcServo::Impl {
       const float limited_torque_Nm =
           Limit(data->feedforward_Nm, -data->max_torque_Nm, data->max_torque_Nm);
       control_.torque_Nm = limited_torque_Nm;
+      status_.torque_error_Nm = status_.torque_Nm - control_.torque_Nm;
       const float limited_q_A =
           torque_to_current(
               limited_torque_Nm *
