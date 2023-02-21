@@ -331,6 +331,7 @@ struct BldcServoCommandData {
 
   // For kSinusoidal
   float sinusoidal_amplitude = 0.0f;
+  float sinusoidal_phase = 0.0f;
   
 
   template <typename Archive>
@@ -368,6 +369,7 @@ struct BldcServoCommandData {
     a->Visit(MJ_NVP(bounds_max));
     a->Visit(MJ_NVP(meas_ind_period));
     a->Visit(MJ_NVP(sinusoidal_amplitude));
+    a->Visit(MJ_NVP(sinusoidal_phase));
   }
 };
 

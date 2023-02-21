@@ -122,6 +122,16 @@ Value ScaleTime(float value, size_t type) {
   return ScaleMapping(value, 0.01f, 0.001f, 0.000001f, type);
 }
 
+Value ScaleSinusoidalAmplitude(float value, size_t type) {
+  return ScaleMapping(value, 1.0f / 127.0f, 1.0f / 32767.0f,
+                      1.0f / 2147483647.0f,
+                      type);
+}
+
+Value ScaleSinusoidalPhase(float value, size_t type) {
+  return ScaleMapping(value, k2Pi / 127.0f, k2Pi / 32767.0f,
+                      k2Pi / 2147483647.0f, type);
+}
 int8_t ReadIntMapping(Value value) {
   return std::visit([](auto a) {
       return static_cast<int8_t>(a);
@@ -199,6 +209,16 @@ float ReadTime(Value value) {
   return ReadScaleMapping(value, 0.01f, 0.001f, 0.000001f);
 }
 
+float ReadSinusoidalAmplitude(Value value) {
+  return ReadScaleMapping(value, 1.0f / 127.0f, 1.0f / 32767.0f,
+                      1.0f / 2147483647.0f);
+}
+
+float ReadSinusoidalPhase(Value value) {
+  return ReadScaleMapping(value, k2Pi / 127.0f, k2Pi / 32767.0f,
+                      k2Pi / 2147483647.0f);
+}
+
 template <typename T, size_t N>
 int8_t PinsToBits(const std::array<T, N>& array) {
   static_assert(N <= 7);
@@ -254,6 +274,8 @@ enum class Register {
   kCommandVelocityLimit = 0x028,
   kCommandAccelLimit = 0x029,
   kCommandFixedVoltageOverride = 0x02a,
+  kCommandSinusoidalAmplitude = 0x02b,
+  kCommandSinusoidalPhase = 0x02c,
 
   kPositionKp = 0x030,
   kPositionKi = 0x031,
@@ -580,6 +602,14 @@ class MoteusController::Impl : public multiplex::MicroServer::Server {
         bldc_.RequireReindex();
         return 0;
       }
+      case Register::kCommandSinusoidalAmplitude: {
+        command_.sinusoidal_amplitude = ReadSinusoidalAmplitude(value);
+        return 0;
+      }
+      case Register::kCommandSinusoidalPhase: {
+        command_.sinusoidal_phase = ReadSinusoidalPhase(value);
+        return 0;
+      }
 
       case Register::kPosition:
       case Register::kVelocity:
@@ -771,6 +801,12 @@ class MoteusController::Impl : public multiplex::MicroServer::Server {
       case Register::kCommandKdScale:
       case Register::kStayWithinKdScale: {
         return ScalePwm(command_.kd_scale, type);
+      }
+      case Register::kCommandSinusoidalAmplitude: {
+         return ScaleSinusoidalAmplitude(command_.sinusoidal_amplitude, type);
+      }
+      case Register::kCommandSinusoidalPhase: {
+        return ScaleSinusoidalPhase(command_.sinusoidal_phase, type);
       }
 
       case Register::kPositionKp: {

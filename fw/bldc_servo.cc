@@ -1818,8 +1818,8 @@ class BldcServo::Impl {
     
     // Apply sinusoidal velocity
     float rotor_pos = WrapZeroToTwoPi(position_.position * k2Pi);
-    float sinusoidal_term = std::sin(rotor_pos);
-    float sinusoidal_command_velocity = data->velocity + 0.4f*data->velocity*sinusoidal_term;
+    float sinusoidal_term = data->sinusoidal_amplitude * std::sin(rotor_pos + data->sinusoidal_phase);
+    float sinusoidal_command_velocity = data->velocity + data->velocity*sinusoidal_term;
 
     ISR_DoPositionCommon(sin_cos, data, apply_options, data->max_torque_Nm,
                          data->feedforward_Nm, sinusoidal_command_velocity);
