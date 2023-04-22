@@ -539,6 +539,8 @@ struct BldcServoConfig {
   // A bitfield that selects one of several things to emit from the
   // debug UART at full control rate.
   uint32_t emit_debug = 0;
+  
+  bool sinusoidal_torque_ff = false;
 
   BldcServoConfig() {
     pid_dq.kp = 0.005f;
@@ -592,6 +594,7 @@ struct BldcServoConfig {
     a->Visit(MJ_NVP(cooldown_cycles));
     a->Visit(MJ_NVP(velocity_zero_capture_threshold));
     a->Visit(MJ_NVP(emit_debug));
+    a->Visit(MJ_NVP(sinusoidal_torque_ff));
   }
 };
 
