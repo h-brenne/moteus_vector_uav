@@ -1822,7 +1822,7 @@ class BldcServo::Impl {
     float sinusoidal_torque_ff = 0.0f;
     float command_velocity = data->velocity;
     if (config_.sinusoidal_torque_ff) {
-      sinusoidal_torque_ff = sinusoidal_term;
+      sinusoidal_torque_ff = sinusoidal_term*config_.sinusoidal_torque_ff_scale;
     } else {
       command_velocity += data->velocity*sinusoidal_term;
     }
